@@ -14,13 +14,14 @@ from __future__ import print_function
 import tensorflow as tf
 import time
 from datetime import datetime
+import os
 
 import models.data as data
-from models.cs231n import Cs231n
+import models.select as select
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir', '/tmp/cifar10_train',
+tf.app.flags.DEFINE_string('log_dir', '/tmp/cifar10',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 10000,
@@ -34,7 +35,16 @@ tf.app.flags.DEFINE_integer('log_freq', 10,
 tf.app.flags.DEFINE_integer('save_freq', 60,
                             """How often to save model to disk (seconds).""")
 
-def train():
+def get_run_dir(log_dir, model_name):
+    model_dir = os.path.join(log_dir, model_name)
+    if os.path.isdir(model_dir):
+        # We will create a new directory for this run
+        run = len(os.listdir(model_dir))
+    else:
+        run = 0
+    return os.path.join(model_dir, '%d' % run)
+
+def train_loop():
 
     # Get traing parameters
     data_dir = FLAGS.data_dir
@@ -50,7 +60,7 @@ def train():
                                  batch_size=batch_size)
 
     # Instantiate the model
-    model = Cs231n()
+    model = select.by_name(FLAGS.model)
 
     # Build a Graph that computes the logits predictions from the
     # inference model
@@ -71,6 +81,10 @@ def train():
 
     # Build another graph to provide training summary information
     summary_op = tf.summary.merge_all()
+
+    # We use one log dir per run
+    run_dir = get_run_dir(FLAGS.log_dir, FLAGS.model)
+    checkpoint_dir = os.path.join(run_dir, 'train')
 
     # This class implements the callbacks for the logger
     class _LoggerHook(tf.train.SessionRunHook):
@@ -105,7 +119,7 @@ def train():
     # Start the training loop using a monitored session (autmatically takes
     # care of thread sync)
     with tf.train.MonitoredTrainingSession(
-        checkpoint_dir=FLAGS.train_dir,
+        checkpoint_dir=checkpoint_dir,
         save_checkpoint_secs=FLAGS.save_freq,
         hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
                tf.train.NanTensorHook(loss),
@@ -115,10 +129,7 @@ def train():
 
 def main(argv=None):
     data.maybe_download_and_extract(FLAGS.data_dir)
-    if tf.gfile.Exists(FLAGS.train_dir):
-        tf.gfile.DeleteRecursively(FLAGS.train_dir)
-    tf.gfile.MakeDirs(FLAGS.train_dir)
-    train()
+    train_loop()
 
 if __name__ == '__main__':
     tf.app.run()

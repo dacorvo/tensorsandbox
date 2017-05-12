@@ -14,22 +14,21 @@ from __future__ import print_function
 from datetime import datetime
 import math
 import time
+import os
 
 import numpy as np
 import tensorflow as tf
 
 import models.data as data
-from models.cs231n import Cs231n
+import models.select as select
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('eval_dir', '/tmp/cifar10_eval',
+tf.app.flags.DEFINE_string('log_dir', '/tmp/cifar10',
                                """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('eval_data', 'test',
                                """Either 'test' or 'train'.""")
-tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/cifar10_train',
-                               """Directory where to read model checkpoints.""")
-tf.app.flags.DEFINE_integer('eval_interval_secs', 60 * 5,
+tf.app.flags.DEFINE_integer('eval_interval_secs', 60,
                                 """How often to run the eval.""")
 tf.app.flags.DEFINE_integer('num_examples', 10000,
                                 """Number of examples to run.""")
@@ -38,11 +37,22 @@ tf.app.flags.DEFINE_boolean('run_once', False,
 tf.app.flags.DEFINE_integer('batch_size', 100,
                                 """Size of each batch.""")
 
-def evaluate(saver, summary_writer, predictions_op, summary_op):
+def get_run_dir(log_dir, model_name):
+    model_dir = os.path.join(log_dir, model_name)
+    if os.path.isdir(model_dir):
+        # We do not create new run directories, we reuse the last one that
+        # should have been created by the training process
+        run = len(os.listdir(model_dir)) - 1
+    else:
+        run = 0
+    return os.path.join(model_dir, '%d' % run)
+
+def evaluate(saver, checkpoint_dir, summary_writer, predictions_op, summary_op):
     """Run an evaluation on FLAGS.num_examples
 
     Args:
         saver: Saver.
+        checkpoint_dir: the directory from which we load checkpoints
         summary_writer: Summary writer.
         predictions_op: Vector predictions op.
         summary_op: Summary op.
@@ -53,7 +63,7 @@ def evaluate(saver, summary_writer, predictions_op, summary_op):
     with tf.Session() as sess:
 
         # Try to restore the model parameters from a checkpoint
-        ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             # Restores from checkpoint
             saver.restore(sess, ckpt.model_checkpoint_path)
@@ -85,11 +95,13 @@ def evaluate(saver, summary_writer, predictions_op, summary_op):
 
             # Compute precision @ 1.
             precision = true_count / total_sample_count
-            print('%s: precision @ 1 = %.3f' % (datetime.now(), precision))
+            print('%s: %s accuracy = %.3f'
+                  % (datetime.now(), FLAGS.eval_data, precision))
 
             summary = tf.Summary()
             summary.ParseFromString(sess.run(summary_op))
-            summary.value.add(tag='Precision @ 1', simple_value=precision)
+            summary.value.add(tag='%s accuracy' % FLAGS.eval_data,
+                              simple_value=precision)
             summary_writer.add_summary(summary, global_step)
         except Exception as e:
             coord.request_stop(e)
@@ -109,8 +121,8 @@ def evaluation_loop():
                                      batch_size=FLAGS.batch_size)
 
         # Instantiate the model
-        model = Cs231n()
-       
+        model = select.by_name(FLAGS.model)
+
         # Build a Graph that computes the logits predictions from the model
         logits = model.inference(images)
 
@@ -124,11 +136,21 @@ def evaluation_loop():
         summary_op = tf.summary.merge_all()
 
         # Since we don't use a session, we need to write summaries ourselves
-        summary_writer = tf.summary.FileWriter(FLAGS.eval_dir, g)
+        run_dir = get_run_dir(FLAGS.log_dir, FLAGS.model)
+        eval_dir = os.path.join(run_dir, 'eval', FLAGS.eval_data)
+        tf.gfile.MakeDirs(eval_dir)
+        summary_writer = tf.summary.FileWriter(eval_dir, g)
+
+        # We need a checkpoint dir to restore model parameters
+        checkpoint_dir = os.path.join(run_dir, 'train')
 
         last_step = 0
         while True:
-            global_step = evaluate(saver, summary_writer, predictions_op, summary_op)
+            global_step = evaluate(saver,
+                                   checkpoint_dir,
+                                   summary_writer,
+                                   predictions_op,
+                                   summary_op)
             if FLAGS.run_once or last_step == global_step:
                 break
             last_step = global_step
@@ -137,9 +159,6 @@ def evaluation_loop():
 
 def main(argv=None):
     data.maybe_download_and_extract(FLAGS.data_dir)
-    if tf.gfile.Exists(FLAGS.eval_dir):
-        tf.gfile.DeleteRecursively(FLAGS.eval_dir)
-    tf.gfile.MakeDirs(FLAGS.eval_dir)
     evaluation_loop()
 
 
