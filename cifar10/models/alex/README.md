@@ -16,3 +16,10 @@ The goal is to reach at least the same accuracy as the tutorial model:
 - 81% qfter 10,000 iterations.
 
 All models are trained using data augmentation and variables moving averages.
+
+# Alex 0
+
+Same model, but with a reduced Kernel size and mode filters in the middle
+layer.
+
+Result: 82,15%, less parameters and processing time
