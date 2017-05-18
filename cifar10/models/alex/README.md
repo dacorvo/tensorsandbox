@@ -23,3 +23,9 @@ Same model, but with a reduced Kernel size and mode filters in the middle
 layer.
 
 Result: 82,15%, less parameters and processing time
+
+# Alex 1
+
+Same model, but replace first FC layer with a 5x5x64x64 conv layer.
+
+Result: 81,8%, lss parameters but a higher processing time.
