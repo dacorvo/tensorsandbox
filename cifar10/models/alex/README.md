@@ -29,3 +29,9 @@ Result: 82,15%, less parameters and processing time
 Same model, but replace first FC layer with a 5x5x64x64 conv layer.
 
 Result: 81,8%, lss parameters but a higher processing time.
+
+# Alex 2
+
+Same model, but without local response normalization.
+
+Result: 81,4%, huge decrease in processing time.
