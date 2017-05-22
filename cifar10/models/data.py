@@ -24,6 +24,8 @@ NUM_THREADS = multiprocessing.cpu_count() * 2
 
 tf.app.flags.DEFINE_string('data_dir', './data',
                            """Directory containing data sets """)
+tf.app.flags.DEFINE_boolean('data_aug', False,
+                             """Whether to perform data augmentation or not""")
 
 DATA_URL = 'http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz'
 
@@ -46,17 +48,29 @@ def maybe_download_and_extract(data_dir):
     if not os.path.exists(extracted_dir_path):
         tarfile.open(filepath, 'r:gz').extractall(data_dir)
 
-def inputs(test_data, data_dir, batch_size):
-    """Construct input for CIFAR evaluation using the Reader ops.
+def resize_image(image):
+    return tf.image.resize_image_with_crop_or_pad(image, 24, 24)
+
+def distort_image(image):
+    # Crop each image to a random smaller image
+    distorted_image = tf.random_crop(image, [24, 24, 3])
+    # Flip left/right
+    distorted_image = tf.image.random_flip_left_right(distorted_image)
+    # Adjust brightness (doesn't seem to work without temp var)
+    distorted_image = tf.image.random_brightness(distorted_image, max_delta=63)
+    # Adjust contrast
+    return tf.image.random_contrast(distorted_image, lower=0.2, upper=1.8)
+
+def get_raw_input_data(test_data, data_dir):
+    """Raw CIFAR10 input data ops using the Reader ops.
 
     Args:
         test_data: bool, indicating if one should use the test or train set.
         data_dir: Path to the CIFAR-10 data directory.
-        batch_size: Number of images per batch.
 
     Returns:
-        images: Images. 4D tensor [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3].
-        labels: Labels. 1D tensor [batch_size].
+        image: an op producing a 32x32x3 float32 image
+        label: an op producing an int32 label
     """
 
     # Verify first that we have a valid data directory
@@ -93,11 +107,11 @@ def inputs(test_data, data_dir, batch_size):
     # Extract label and cast to int32
     label = tf.cast(tf.slice(record_bytes, [0], [label_size]), tf.int32)
 
-    # Extract image and cast to int32
+    # Extract image and cast to float32
     image = tf.cast(tf.slice(record_bytes,
                              [label_size],
                              [image_size]),
-                    tf.int32)
+                    tf.float32)
 
     # Images are stored as D x H x W vectors, but we want H x W x D
     # So we need to convert to a matrix
@@ -105,11 +119,35 @@ def inputs(test_data, data_dir, batch_size):
     # Transpose dimensions
     image = tf.transpose(image, (1, 2, 0))
 
+    return (image, label)
+
+def eval_inputs(test_data, data_dir, batch_size):
+    """Construct input for CIFAR evaluation using the Reader ops.
+
+    Args:
+        test_data: bool, indicating if one should use the test or train set.
+        data_dir: Path to the CIFAR-10 data directory.
+        batch_size: Number of images per batch.
+
+    Returns:
+        images: Images. 4D tensor [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3].
+        labels: Labels. 1D tensor [batch_size].
+    """
+
+    # Transpose dimensions
+    raw_image, label = get_raw_input_data(test_data, data_dir)
+
+    # If needed, perform data augmentation
+    if tf.app.flags.FLAGS.data_aug:
+        image = resize_image(raw_image)
+    else:
+        image = raw_image
+
     # Normalize image (substract mean and divide by variance)
-    image = tf.image.per_image_standardization(image)
+    float_image = tf.image.per_image_standardization(image)
 
     # Create a queue to extract batch of samples
-    images, labels = tf.train.batch([image,label],
+    images, labels = tf.train.batch([float_image,label],
                                      batch_size = batch_size,
                                      num_threads= NUM_THREADS,
                                      capacity = 3 * batch_size)
@@ -118,3 +156,40 @@ def inputs(test_data, data_dir, batch_size):
     tf.summary.image('images', images)
 
     return images, tf.reshape(labels, [batch_size])
+
+def train_inputs(data_dir, batch_size):
+    """Construct input for CIFAR training.
+
+    Args:
+        data_dir: Path to the CIFAR-10 data directory.
+        batch_size: Number of images per batch.
+
+    Returns:
+        images: Images. 4D tensor [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3].
+        labels: Labels. 1D tensor [batch_size].
+    """
+
+    # Transpose dimensions
+    raw_image, label = get_raw_input_data(False, data_dir)
+
+    # If needed, perform data augmentation
+    if tf.app.flags.FLAGS.data_aug:
+        image = distort_image(raw_image)
+    else:
+        image = raw_image
+
+    # Normalize image (substract mean and divide by variance)
+    float_image = tf.image.per_image_standardization(image)
+
+    # Create a queue to extract batch of samples
+    images, labels = tf.train.shuffle_batch([float_image,label],
+                                     batch_size = batch_size,
+                                     num_threads = NUM_THREADS,
+                                     capacity = 20000 + 3 * batch_size,
+                                     min_after_dequeue = 20000)
+
+    # Display the training images in the visualizer
+    tf.summary.image('images', images)
+
+    return images, tf.reshape(labels, [batch_size])
+

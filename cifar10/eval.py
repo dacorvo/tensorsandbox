@@ -116,9 +116,9 @@ def evaluation_loop():
         # Do we evaluate the net on the training data or the test data ?
         test_data = FLAGS.eval_data == 'test'
         # Get images and labels for CIFAR-10
-        images, labels = data.inputs(test_data=test_data,
-                                     data_dir=FLAGS.data_dir,
-                                     batch_size=FLAGS.batch_size)
+        images, labels = data.eval_inputs(test_data=test_data,
+                                          data_dir=FLAGS.data_dir,
+                                          batch_size=FLAGS.batch_size)
 
         # Instantiate the model
         model = select.by_name(FLAGS.model)
