@@ -129,8 +129,14 @@ def evaluation_loop():
         # Calculate predictions (we are only interested in perfect matches, ie k=1)
         predictions_op = tf.nn.in_top_k(logits, labels, 1)
 
+        # We restore moving averages instead of raw values
+        # Note that at evaluation time, the decay parameter is not used
+        variables_averages = \
+                tf.train.ExponentialMovingAverage(1.0) # 1.0 decay is unused
+        variables_to_restore = variables_averages.variables_to_restore()
+
         # Instantiate a saver to restore model variables from checkpoint
-        saver = tf.train.Saver(tf.global_variables())
+        saver = tf.train.Saver(variables_to_restore)
 
         # Build the summary operation based on the TF collection of Summaries
         summary_op = tf.summary.merge_all()

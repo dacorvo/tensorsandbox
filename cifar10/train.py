@@ -35,6 +35,8 @@ tf.app.flags.DEFINE_integer('log_freq', 10,
 tf.app.flags.DEFINE_integer('save_freq', 60,
                             """How often to save model to disk (seconds).""")
 
+MOVING_AVERAGE_DECAY = 0.9999
+
 def get_run_dir(log_dir, model_name):
     model_dir = os.path.join(log_dir, model_name)
     if os.path.isdir(model_dir):
@@ -76,7 +78,18 @@ def train_loop():
 
     # Build a graph that applies gradient descent to update model parameters
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-    train_op = optimizer.minimize(loss, global_step = global_step)
+    sgd_op = optimizer.minimize(loss, global_step = global_step)
+
+    # Build yet another graph to evaluate moving averages of variables after
+    # each step: these smoothed parameters will be loaded instead of the raw
+    # trained values during evaluation
+    variable_averages = \
+        tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_step)
+    variables_averages_op = variable_averages.apply(tf.trainable_variables())
+
+    # Create a meta-graph that includes sgd and variables moving average
+    with tf.control_dependencies([sgd_op, variables_averages_op]):
+        train_op = tf.no_op(name='train')
 
     # Build another graph to provide training summary information
     summary_op = tf.summary.merge_all()
