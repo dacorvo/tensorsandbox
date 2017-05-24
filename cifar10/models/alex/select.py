@@ -4,6 +4,7 @@ import alex0
 import alex1
 import alex2
 import alex3
+import alex4
 
 def by_name(name):
     if name == 'alex0':
@@ -14,6 +15,8 @@ def by_name(name):
         model = alex2.Alex2()
     elif name == 'alex3':
         model = alex3.Alex3()
+    elif name == 'alex4':
+        model = alex4.Alex4()
     else:
         raise ValueError('No such model %s' % name)
     return model

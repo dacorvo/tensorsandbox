@@ -67,3 +67,18 @@ Results:
 @100,000: 85,5%
 
 same processing time.
+
+# Alex 4
+
+We combine here the two best variants, ie Alex0 + Alex2 (modified middle
+convnet topology, without lrn normalization)
+Since we don't use normalization, we can further increase the number of
+filters without inducing too much processing.
+
+Results:
+
+@10,000:  81,2%
+@50,000:  86,0%
+@100,000: 86,4%
+
+lower processing time.
