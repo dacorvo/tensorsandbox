@@ -4,6 +4,7 @@ import cs231n
 import tuto
 import convone
 import alex.select
+import nin.select
 
 tf.app.flags.DEFINE_string('model', 'cs231n',
         """One of [cs231n, tuto, convone, alex{N}].""")
@@ -17,6 +18,8 @@ def by_name(name):
         model = convone.ConvOne()
     elif name.startswith('alex'):
         model = alex.select.by_name(name)
+    elif name.startswith('nin'):
+        model = nin.select.by_name(name)
     else:
         raise ValueError('No such model %s' % name)
     return model
