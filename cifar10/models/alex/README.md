@@ -13,31 +13,57 @@ tutorial model itself as improving training and/or accuracy:
 - weight decay is applied only on FC nets
 
 The goal is to reach at least the same accuracy as the tutorial model:
-- 81% after 10,000 iterations.
+- 81,0% after 10,000 iterations,
+- 85,5% after 50,000 iterations,
+- 86,0% after 100,000 iterations.
 
 All models are trained using data augmentation and variables moving averages.
 
 # Alex 0
 
-Same model, but with a reduced Kernel size and mode filters in the middle
+Same model, but with a reduced Kernel size and more filters in the middle
 layer.
 
-Result: 82,15%, less parameters and processing time
+Results:
+
+@10,000:  82,2%
+@50,000:  85,7%
+@100,000: 86,6%
+
+less parameters and processing time.
 
 # Alex 1
 
 Same model, but replace first FC layer with a 5x5x64x64 conv layer.
 
-Result: 81,8%, lss parameters but a higher processing time.
+Results:
+
+@10,000:  81,8%
+@50,000:  85,1%
+@100,000: 85,9%
+
+less parameters but a higher processing time.
 
 # Alex 2
 
 Same model, but without local response normalization.
 
-Result: 81,4%, huge decrease in processing time.
+Results:
+
+@10,000:  81,4%
+@10,000:  85,3%
+@100,000: 86,1%
+
+huge decrease in processing time.
 
 # Alex 3
 
 Same model, but with one FC layer removed.
 
-Result: 81,2%, same processing time
+Results:
+
+@10,000:  81,2%
+@50,000:  84,8%
+@100,000: 85,5%
+
+same processing time.
