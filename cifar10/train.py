@@ -48,19 +48,18 @@ def get_run_dir(log_dir, model_name):
         run = 0
     return os.path.join(model_dir, '%d' % run)
 
-def train_loop():
-
-    # Get traing parameters
+# Return train_op, loss, summary_op
+def train_ops():
+    # Get training parameters
     data_dir = FLAGS.data_dir
     batch_size = FLAGS.batch_size
     learning_rate = FLAGS.learning_rate
-
     # Create global step counter
     global_step = tf.Variable(0, name='global_step', trainable=False)
 
     # Instantiate async producers for images and labels
     images, labels = data.train_inputs(data_dir=data_dir,
-                                       batch_size=batch_size)
+                                        batch_size=batch_size)
 
     # Instantiate the model
     model = select.by_name(FLAGS.model)
@@ -96,6 +95,20 @@ def train_loop():
     # Build another graph to provide training summary information
     summary_op = tf.summary.merge_all()
 
+    return (train_op, loss, summary_op)
+
+def train_loop(cluster=None, master=None, task_index=0):
+
+    # Get training ops
+    if cluster:
+        # Assign ops to the local worker
+        with tf.device(tf.train.replica_device_setter(
+                       worker_device="/job:worker/task:%d" % FLAGS.task_index,
+                       cluster=cluster)):
+            train_op, loss, summary_op = train_ops()
+    else:
+        train_op, loss, summary_op = train_ops()
+
     # We use one log dir per run
     run_dir = get_run_dir(FLAGS.log_dir, FLAGS.model)
     checkpoint_dir = os.path.join(run_dir, 'train')
@@ -130,9 +143,11 @@ def train_loop():
                                  examples_per_sec,
                                  sec_per_batch))
 
-    # Start the training loop using a monitored session (autmatically takes
+    # Start the training loop using a monitored session (automatically takes
     # care of thread sync)
     with tf.train.MonitoredTrainingSession(
+        master=master,
+        is_chief=(task_index == 0),
         checkpoint_dir=checkpoint_dir,
         save_checkpoint_secs=FLAGS.save_freq,
         hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
