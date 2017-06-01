@@ -34,14 +34,21 @@ tf.app.flags.DEFINE_integer('log_freq', 10,
                             """How often to log results (steps).""")
 tf.app.flags.DEFINE_integer('save_freq', 60,
                             """How often to save model to disk (seconds).""")
+tf.app.flags.DEFINE_boolean('resume', False,
+                            """Continue training the previous model""")
+
 
 MOVING_AVERAGE_DECAY = 0.9999
 
 def get_run_dir(log_dir, model_name):
     model_dir = os.path.join(log_dir, model_name)
     if os.path.isdir(model_dir):
-        # We will create a new directory for this run
-        run = len(os.listdir(model_dir))
+        if FLAGS.resume:
+            # Reuse the last directory
+            run = len(os.listdir(model_dir)) - 1
+        else:
+            # We will create a new directory for this run
+            run = len(os.listdir(model_dir))
     else:
         run = 0
     return os.path.join(model_dir, '%d' % run)
