@@ -16,18 +16,14 @@ import time
 from datetime import datetime
 import os
 
+import job
 import models.data as data
 import models.select as select
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('log_dir', '/tmp/cifar10',
-                           """Directory where to write event logs """
-                           """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 10000,
                             """Number of batches to run.""")
-tf.app.flags.DEFINE_integer('batch_size', 128,
-                            """Size of each batch.""")
 tf.app.flags.DEFINE_float('learning_rate', 0.1,
                             """Initial learning rate.""")
 tf.app.flags.DEFINE_integer('log_freq', 10,
@@ -36,7 +32,6 @@ tf.app.flags.DEFINE_integer('save_freq', 60,
                             """How often to save model to disk (seconds).""")
 tf.app.flags.DEFINE_boolean('resume', False,
                             """Continue training the previous model""")
-
 
 MOVING_AVERAGE_DECAY = 0.9999
 

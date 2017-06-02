@@ -19,13 +19,12 @@ import os
 import numpy as np
 import tensorflow as tf
 
+import job
 import models.data as data
 import models.select as select
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('log_dir', '/tmp/cifar10',
-                               """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('eval_data', 'test',
                                """Either 'test' or 'train'.""")
 tf.app.flags.DEFINE_integer('eval_interval_secs', 60,
@@ -34,8 +33,6 @@ tf.app.flags.DEFINE_integer('num_examples', 10000,
                                 """Number of examples to run.""")
 tf.app.flags.DEFINE_boolean('run_once', False,
                              """Whether to run eval only once.""")
-tf.app.flags.DEFINE_integer('batch_size', 100,
-                                """Size of each batch.""")
 
 def get_run_dir(log_dir, model_name):
     model_dir = os.path.join(log_dir, model_name)
