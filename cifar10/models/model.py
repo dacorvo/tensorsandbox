@@ -9,9 +9,10 @@ WEIGHT_DECAY = 1e2
 
 class Model(object):
 
-    def __init__(self, wd=WEIGHT_DECAY):
+    def __init__(self, wd=WEIGHT_DECAY, dropout=0.0):
 
         self.wd = wd
+        self.dropout = dropout
 
     def _get_weights_var(self, name, shape, decay=False):
         """Helper to create an initialized Variable with weight decay.

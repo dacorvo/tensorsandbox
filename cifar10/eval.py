@@ -120,6 +120,9 @@ def evaluation_loop():
         # Instantiate the model
         model = select.by_name(FLAGS.model)
 
+        # Force dropout to zero for evaluation
+        model.dropout = 0.0
+
         # Build a Graph that computes the logits predictions from the model
         logits = model.inference(images)
 

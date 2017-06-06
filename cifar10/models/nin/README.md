@@ -57,3 +57,25 @@ Results:
 @100,000: 83,7%
 
 Almost no impact.
+
+# NIN2
+
+This model is almost a clone of the CIFAR10 experiment of the original NIN
+paper
+
+5x5x3x192 -> 1x1x192x160 -> 1x1x160x96
+maxpoolx2
+dropout@0.5
+5x5x96x192 -> 1x1x192x192 -> 1x1x192x192
+maxpoolx2
+dropout@0.5
+3x3x192x192 -> 1x1x192x192 -> 1x1x192x10
+global average pool
+
+Results:
+
+@10,000:  74,2%
+@50,000:  87,2%
+@100,000: 88,9%
+
+Huge processing time
