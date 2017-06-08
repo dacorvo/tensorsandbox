@@ -71,3 +71,10 @@ class Model(object):
         total_loss = tf.add_n(tf.get_collection('losses'), name='total_loss')
 
         return total_loss
+
+    def accuracy(self, logits, labels):
+
+        # Evaluate predictions
+        predictions_op = tf.nn.in_top_k(logits, labels, 1)
+
+        return tf.reduce_mean(tf.cast(predictions_op, tf.float32), name='accuracy')

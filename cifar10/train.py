@@ -71,8 +71,12 @@ def train_ops():
     # Calculate loss
     loss = model.loss(logits, labels)
 
+    # Evaluate training accuracy
+    accuracy = model.accuracy(logits, labels)
+
     # Attach a scalar summary only to the total loss
     tf.summary.scalar('loss', loss)
+    tf.summary.scalar('batch accuracy', accuracy)
     # Note that for debugging purpose, we could also track other losses
     #for l in tf.get_collection('losses'):
     #    tf.summary.scalar(l.op.name, l)
@@ -95,7 +99,7 @@ def train_ops():
     # Build another graph to provide training summary information
     summary_op = tf.summary.merge_all()
 
-    return (train_op, loss, summary_op)
+    return (train_op, loss, accuracy, summary_op)
 
 def train_loop(cluster=None, master=None, task_index=0):
 
@@ -105,9 +109,9 @@ def train_loop(cluster=None, master=None, task_index=0):
         with tf.device(tf.train.replica_device_setter(
                        worker_device="/job:worker/task:%d" % FLAGS.task_index,
                        cluster=cluster)):
-            train_op, loss, summary_op = train_ops()
+            train_op, loss, accuracy, summary_op = train_ops()
     else:
-        train_op, loss, summary_op = train_ops()
+        train_op, loss, accuracy, summary_op = train_ops()
 
     # We use one log dir per run
     run_dir = get_run_dir(FLAGS.log_dir, FLAGS.model)
@@ -123,7 +127,7 @@ def train_loop(cluster=None, master=None, task_index=0):
 
       def before_run(self, run_context):
         self._step += 1
-        return tf.train.SessionRunArgs(loss)  # Asks for values.
+        return tf.train.SessionRunArgs([loss, accuracy])  # Asks for values.
 
       def after_run(self, run_context, run_values):
         if self._step % FLAGS.log_freq == 0:
@@ -131,15 +135,17 @@ def train_loop(cluster=None, master=None, task_index=0):
             duration = current_time - self._start_time
             self._start_time = current_time
 
-            loss_value = run_values.results
+            loss_value = run_values.results[0]
+            accuracy_value = run_values.results[1]
             examples_per_sec = FLAGS.log_freq * FLAGS.batch_size / duration
             sec_per_batch = float(duration / FLAGS.log_freq)
 
-            format_str = '%s: step %d, loss = %.2f '
+            format_str = '%s: step %d, loss = %.2f , accuracy = %.2f '
             format_str += '(%.1f examples/sec; %.3f sec/batch)'
             print (format_str % (datetime.now(),
                                  self._step,
                                  loss_value,
+                                 accuracy_value,
                                  examples_per_sec,
                                  sec_per_batch))
 
