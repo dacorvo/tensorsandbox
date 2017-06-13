@@ -27,3 +27,15 @@ With data augmentation, the accuracy after 10,000 iterations reached 78,8%.
 
 Finally, I used trainable variables moving averages instead of raw values, and
 it gave me the extra missing accuracy to match the tutorial performance: 81,4%.
+
+## Further experiments
+
+The plan is to experiment further with different models:
+- ALexNet-style models that combine convolutional and dense layers,
+- NiN networks that remove dense layers altogether,
+- SqueezeNets that parallelize convnets,
+- Inception nets.
+
+Also, examine how these models can be compressed using:
+- iterative pruning,
+- quantization.
