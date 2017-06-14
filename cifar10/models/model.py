@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import numpy as np
 
 WEIGHT_DECAY = 1e2
 
@@ -13,6 +14,8 @@ class Model(object):
 
         self.wd = wd
         self.dropout = dropout
+        self.sizes = []
+        self.flops = []
 
     def _get_weights_var(self, name, shape, decay=False):
         """Helper to create an initialized Variable with weight decay.
@@ -52,6 +55,107 @@ class Model(object):
 
         return var
 
+    def conv_layer(self, inputs, size, filters, stride, decay, name):
+        channels = inputs.get_shape()[3]
+        shape = [size, size, channels, filters]
+        with tf.variable_scope(name + '/conv') as scope:
+            weights = self._get_weights_var('weights',
+                                            shape=shape,
+                                            decay=decay)
+
+            biases = tf.get_variable('biases',
+                                    shape=[filters],
+                                    dtype=tf.float32,
+                                    initializer=tf.constant_initializer(0.0))
+            conv = tf.nn.conv2d(inputs,
+                                weights,
+                                strides=[1,stride,stride,1],
+                                padding='SAME')
+            pre_activation = tf.nn.bias_add(conv, biases)
+
+            outputs= tf.nn.relu(pre_activation, name=scope.name)
+
+        # Evaluate layer size
+        self.sizes.append((name,(1+size*size*int(channels))*filters))
+
+        # Evaluate number of operations
+        N, w, h, c = outputs.get_shape()
+        # Number of convolutions
+        num_flops = (1+2*int(channels)*size*size)*filters*int(w)*int(h)
+        # Number of ReLU
+        num_flops += 2*filters*int(w)*int(h)
+        self.flops.append((name, num_flops))
+
+        return outputs
+
+    def pool_layer(self, inputs, size, stride, name):
+        with tf.variable_scope(name) as scope:
+            outputs = tf.nn.max_pool(inputs,
+                                     ksize=[1,size,size,1],
+                                     strides=[1,stride,stride,1],
+                                     padding='SAME',
+                                     name=name)
+
+        return outputs
+
+    def fc_layer(self, inputs, neurons, decay, name, relu=True):
+        if len(inputs.get_shape().as_list()) > 2:
+            # We need to reshape inputs
+            N = inputs.get_shape().as_list()[0]
+            reshaped = tf.reshape(inputs, shape=[N, -1])
+        else:
+            reshaped = inputs
+        dim = reshaped.get_shape()[1].value
+        with tf.variable_scope(name) as scope:
+            weights = self._get_weights_var('weights',
+                                            shape=[dim,neurons],
+                                            decay=decay)
+            biases = tf.get_variable('biases',
+                                    shape=[neurons],
+                                    dtype=tf.float32,
+                                    initializer=tf.constant_initializer(0.0))
+            if relu:
+                outputs = tf.nn.relu(tf.matmul(reshaped, weights) + biases,
+                                     name=scope.name)
+            else:
+                outputs = tf.add(tf.matmul(reshaped, weights), biases,
+                                 name=scope.name)
+
+        # Evaluate layer size
+        self.sizes.append((name, (dim + 1) * neurons))
+
+        # Evaluate layer operations
+        # Matrix multiplication plus bias
+        num_flops = (2 * dim + 1) * neurons
+        # ReLU
+        if relu:
+            num_flops += 2 * neurons
+        self.flops.append((name, num_flops))
+
+        return outputs
+
+    def lrn_layer(self, inputs, name):
+        depth_radius=4
+        with tf.variable_scope(name) as scope:
+            outputs = tf.nn.lrn(inputs,
+                                depth_radius=depth_radius,
+                                bias=1.0,
+                                alpha=0.001/9.0,
+                                beta=0.75,
+                                name=scope.name)
+
+        input_size = np.prod(inputs.get_shape().as_list()[1:])
+
+        # Evaluate layer operations
+        # First, cost to calculate normalizer (using local input squares sum)
+        # norm = (1 + alpha/n*sum[n](local-input*local_input)
+        local_flops = 1 + 1 + 1 + 2*depth_radius*depth_radius
+        # Then cost to divide each input by the normalizer
+        num_flops = (local_flops + 1)*input_size
+        self.flops.append((name, num_flops))
+
+        return outputs
+
     def inference(self, images):
         raise NotImplementedError('Model subclasses must implement this method')
 
@@ -78,3 +182,15 @@ class Model(object):
         predictions_op = tf.nn.in_top_k(logits, labels, 1)
 
         return tf.reduce_mean(tf.cast(predictions_op, tf.float32), name='accuracy')
+
+    def get_flops(self):
+        num_flops = 0
+        for layer in self.flops:
+            num_flops += layer[1]
+        return num_flops
+    
+    def get_size(self):
+        size = 0
+        for layer in self.sizes:
+            size += layer[1]
+        return size
