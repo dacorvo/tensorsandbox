@@ -18,100 +18,52 @@ class Tuto(model.Model):
     def inference(self, images):
 
         # conv1
-        with tf.variable_scope('conv1') as scope:
-            weights = self._get_weights_var('weights',
-                                            shape=[5, 5, 3, 64],
-                                            decay=False)
-            biases = tf.get_variable('biases', 
-                                    shape=[64],
-                                    dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0.0))
-            conv = tf.nn.conv2d(images,
-                                weights,
-                                strides=[1,1,1,1],
-                                padding='SAME')
-            pre_activation = tf.nn.bias_add(conv, biases)
-            conv1 = tf.nn.relu(pre_activation, name= scope.name)
+        conv1 = self.conv_layer(images,
+                                size=5,
+                                filters=64,
+                                stride=1,
+                                decay=False,
+                                name='conv1')
 
         # pool1 & norm1
-        with tf.variable_scope('pooling1_lrn') as scope:
-            pool1 = tf.nn.max_pool(conv1,
-                                   ksize=[1,3,3,1],
-                                   strides=[1,2,2,1],
-                                   padding='SAME',
-                                   name='pooling1')
-            norm1 = tf.nn.lrn(pool1,
-                              depth_radius=4,
-                              bias=1.0,
-                              alpha=0.001/9.0,
-                              beta=0.75,
-                              name='norm1')
+        pool1 = self.pool_layer(conv1,
+                                size=3,
+                                stride=2,
+                                name='pool1')
+        norm1 = self.lrn_layer(pool1, name='norm1')
 
         # conv2
-        with tf.variable_scope('conv2') as scope:
-            weights = self._get_weights_var('weights',
-                                            shape=[5, 5, 64, 64],
-                                            decay=False)
-            biases = tf.get_variable('biases', 
-                                    shape=[64],
-                                    dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0.1))
-            conv = tf.nn.conv2d(norm1,
-                                weights,
-                                strides=[1,1,1,1],
-                                padding='SAME')
-            pre_activation = tf.nn.bias_add(conv, biases)
-            conv2 = tf.nn.relu(pre_activation, name= scope.name)
+        conv2 = self.conv_layer(norm1,
+                                size=5,
+                                filters=64,
+                                stride=1,
+                                decay=False,
+                                name='conv2')
 
         # norm2 & pool2 (order inverted as compared to conv1)
-        with tf.variable_scope('pooling2_lrn') as scope:
-            norm2 = tf.nn.lrn(conv2,
-                              depth_radius=4,
-                              bias=1.0,
-                              alpha=0.001/9.0,
-                              beta=0.75,
-                              name='norm2')
-            pool2 = tf.nn.max_pool(norm2,
-                                   ksize=[1,3,3,1],
-                                   strides=[1,2,2,1],
-                                   padding='SAME',
-                                   name='pooling2')
+        norm2 = self.lrn_layer(conv2, name='norm2')
+        pool2 = self.pool_layer(norm2,
+                                size=3,
+                                stride=2,
+                                name='pool2')
 
         # local3
-        with tf.variable_scope('fc2') as scope:
-            N = images.get_shape().as_list()[0]
-            reshape = tf.reshape(pool2, shape=[N, -1])
-            dim = reshape.get_shape()[1].value
-            weights = self._get_weights_var('weights',
-                                            shape=[dim,384],
-                                            decay=True)
-            biases = tf.get_variable('biases',
-                                    shape=[384],
-                                    dtype=tf.float32, 
-                                    initializer=tf.constant_initializer(0.1))
-            fc2 = tf.nn.relu(tf.matmul(reshape, weights) + biases,
-                             name=scope.name)
+        fc2 = self.fc_layer(pool2,
+                            neurons=384,
+                            decay=True,
+                            name='fc2')
 
         # local4
-        with tf.variable_scope('fc3') as scope:
-            weights = self._get_weights_var('weights',
-                                            shape=[384,192],
-                                            decay=True)
-            biases = tf.get_variable('biases',
-                                    shape=[192],
-                                    dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0.1))
-            fc3 = tf.nn.relu(tf.matmul(fc2, weights) + biases, name=scope.name)
+        fc3 = self.fc_layer(fc2,
+                            neurons=192,
+                            decay=True,
+                            name='fc3')
 
         # Last fully connected layer
-        with tf.variable_scope('fc4') as scope:
-            weights = self._get_weights_var('weights',
-                                            shape=[192,10],
-                                            decay=False)
-            biases = tf.get_variable('biases',
-                                    shape=[10],
-                                    dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0.0))
-            fc4 = tf.add(tf.matmul(fc3, weights), biases, name=scope.name)
-        
+        fc4 = self.fc_layer(fc3,
+                            neurons=10,
+                            decay=False,
+                            relu=False,
+                            name='fc4')
+
         return fc4

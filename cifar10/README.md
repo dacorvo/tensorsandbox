@@ -28,6 +28,18 @@ With data augmentation, the accuracy after 10,000 iterations reached 78,8%.
 Finally, I used trainable variables moving averages instead of raw values, and
 it gave me the extra missing accuracy to match the tutorial performance: 81,4%.
 
+Tutorial model metrics:
+
+Without data augmentation (32x32x3 images):
+
+Size : 1.76 Millions of parameters
+Flops: 66.98 Millions of operations
+
+With data augmentation (24x24x3 images):
+
+Size : 1.07 Millions of parameters
+Flops: 37.75 Millions of operations
+
 ## Further experiments
 
 The plan is to experiment further with different models:
