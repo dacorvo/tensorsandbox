@@ -40,6 +40,9 @@ We use a significantly lower number of parameters than the traditional Alex
 style architecture, but the processing cost increases.
 The training also takes longer to converge.
 
+Size : 0.12 Millions of parameters
+Flops: 46.21 Millions of operations
+
 # NIN 1
 
 Just a minor deviation from the first model: we use more 1x1 filters in the
@@ -56,7 +59,10 @@ Results:
 @50,000:  82,8%
 @100,000: 83,7%
 
-Almost no impact.
+Almost no impact on accuracy, higher processing time.
+
+Size : 0.18 Millions of parameters
+Flops: 69.33 Millions of operations
 
 # NIN2
 
@@ -78,4 +84,7 @@ Results:
 @50,000:  87,2%
 @100,000: 88,9%
 
-Huge processing time
+Accuracy greatly improved, but processing cost explodes.
+
+Size : 0.97 Millions of parameters
+Flops: 251.36 Millions of operations
