@@ -15,56 +15,32 @@ class SqueezeNet(model.Model):
 
         super(SqueezeNet, self).__init__(wd, dropout)
 
-    def fire(self, inputs, s1x1, e1x1, e3x3, decay=False):
+    def fire_layer(self, inputs, s1x1, e1x1, e3x3, name, decay=False):
+        with tf.variable_scope(name) as scope:
 
-        channels = inputs.get_shape()[3]
-        # Squeeze sub-layer
-        with tf.variable_scope('s1x1') as scope:
-            weights = self._get_weights_var('weights',
-                                            shape=[1, 1, channels, s1x1],
-                                            decay=decay)
-            biases = tf.get_variable('biases', 
-                                    shape=[s1x1],
-                                    dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0.0))
-            conv = tf.nn.conv2d(inputs,
-                                weights,
-                                strides=[1,1,1,1],
-                                padding='SAME')
-            pre_activation = tf.nn.bias_add(conv, biases)
-            squeezed_inputs = tf.nn.relu(pre_activation, name= scope.name)
+            # Squeeze sub-layer
+            squeezed_inputs = self.conv_layer(inputs,
+                                              size=1,
+                                              filters=s1x1,
+                                              stride=1,
+                                              decay=decay,
+                                              name='s1x1')
 
-        # Expand 1x1 sub-layer
-        with tf.variable_scope('e1x1') as scope:
-            weights = self._get_weights_var('weights',
-                                            shape=[1, 1, s1x1, e1x1],
-                                            decay=decay)
-            biases = tf.get_variable('biases', 
-                                    shape=[e1x1],
-                                    dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0.0))
-            conv = tf.nn.conv2d(squeezed_inputs,
-                                weights,
-                                strides=[1,1,1,1],
-                                padding='SAME')
-            pre_activation = tf.nn.bias_add(conv, biases)
-            e1x1_outputs = tf.nn.relu(pre_activation, name= scope.name)
-        
-        # Expand 3x3 sub-layer
-        with tf.variable_scope('e3x3') as scope:
-            weights = self._get_weights_var('weights',
-                                            shape=[1, 3, s1x1, e3x3],
-                                            decay=decay)
-            biases = tf.get_variable('biases', 
-                                    shape=[e3x3],
-                                    dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0.0))
-            conv = tf.nn.conv2d(squeezed_inputs,
-                                weights,
-                                strides=[1,1,1,1],
-                                padding='SAME')
-            pre_activation = tf.nn.bias_add(conv, biases)
-            e3x3_outputs = tf.nn.relu(pre_activation, name= scope.name)
+            # Expand 1x1 sub-layer
+            e1x1_outputs = self.conv_layer(squeezed_inputs,
+                                           size=1,
+                                           filters=e1x1,
+                                           stride=1,
+                                           decay=decay,
+                                           name='e1x1')
+            
+            # Expand 3x3 sub-layer
+            e3x3_outputs = self.conv_layer(squeezed_inputs,
+                                           size=3,
+                                           filters=e3x3,
+                                           stride=1,
+                                           decay=decay,
+                                           name='e3x3')
         
         # Concatenate outputs along the last dimension (channel)
         return tf.concat([e1x1_outputs, e3x3_outputs], 3)

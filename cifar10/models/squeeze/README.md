@@ -4,6 +4,8 @@
 that stacks layers of 'fire module'. Each fire module combines a 1x1 convolution
 to 'squeeze' the input and mixed 1x1 and 3x3 convolutions to expand the output.
 
+The model is trained with data augmentation and moving average of variables.
+
 ## Squeeze 0
 
 conv [3x3x3x64]
@@ -22,4 +24,8 @@ Results:
 @100,000: 77,5%
 @150,000: 78,9%
 
-Processing time is OK, but the results are less accurate.
+The network is tiny, and the processing time is equivalent to the tutorial
+version, but the accuracy is not as good.
+
+Size : 0.12 Millions of parameters
+Flops: 37.13 Millions of operations
