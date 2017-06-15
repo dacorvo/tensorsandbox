@@ -30,7 +30,10 @@ Results:
 @50,000:  85,7%
 @100,000: 86,6%
 
-less parameters and processing time.
+More parameters but less processing cost.
+
+Size : 1.46 Millions of parameters
+Flops: 25.24 Millions of operations
 
 # Alex 1
 
@@ -42,7 +45,10 @@ Results:
 @50,000:  85,1%
 @100,000: 85,9%
 
-less parameters but a higher processing time.
+Much less parameters but a slightly higher processing cost.
+
+Size : 0.32 Millions of parameters
+Flops: 43.51 Millions of operations
 
 # Alex 2
 
@@ -54,7 +60,11 @@ Results:
 @10,000:  85,3%
 @100,000: 86,1%
 
-huge decrease in processing time.
+Huge decrease in processing time despite equivalent computation cost.
+This may be relatd to the lrn implementation (or my bogus calculations).
+
+Size : 1.07 Millions of parameters
+Flops: 37.08 Millions of operations
 
 # Alex 3
 
@@ -67,6 +77,9 @@ Results:
 @100,000: 85,5%
 
 same processing time.
+
+Size : 1.00 Millions of parameters
+Flops: 37.60 Millions of operations
 
 # Alex 4
 
@@ -81,4 +94,7 @@ Results:
 @50,000:  86,0%
 @100,000: 86,4%
 
-lower processing time.
+Again, we see a lower processing time for an equivalent processing cost.
+
+Size : 1.49 Millions of parameters
+Flops: 35.20 Millions of operations
