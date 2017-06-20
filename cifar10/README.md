@@ -40,13 +40,22 @@ With data augmentation (24x24x3 images):
 Size : 1.07 Millions of parameters
 Flops: 37.75 Millions of operations
 
-## Further experiments
+## Performance experiments
 
-The plan is to experiment further with different models:
+The plan was to experiment further with different models:
 - ALexNet-style models that combine convolutional and dense layers,
 - NiN networks that remove dense layers altogether,
 - SqueezeNets that parallelize convnets,
-- Inception nets.
+- Inception nets (yet to be tested).
+
+The idea was to stay within the same range in terms of computational cost and
+model size, but trying to find a better compromise between model accuracy and
+inference performance.
+
+The figure below provides accuracy for the three best models I obtained,
+compared to the tutorial version.
+
+![cifar10 accuracy for various models after 300,000 iterations](./cifar10@300000.jpg)
 
 Also, examine how these models can be compressed using:
 - iterative pruning,
