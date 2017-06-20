@@ -21,7 +21,5 @@ python ${SCRIPTDIR}/train.py ${train_args} &
 
 # Wait a little to let it start
 sleep 5
-# Launch eval on train data
-python ${SCRIPTDIR}/eval.py ${eval_args} --eval_data train &
 # Launch eval on test data
 python ${SCRIPTDIR}/eval.py ${eval_args}
