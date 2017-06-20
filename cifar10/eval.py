@@ -85,15 +85,18 @@ def evaluate(saver, checkpoint_dir, summary_writer, predictions_op, summary_op):
             true_count = 0  # Counts the number of correct predictions.
             total_sample_count = num_iter * FLAGS.batch_size
             step = 0
+            start = time.time()
             while step < num_iter and not coord.should_stop():
                 predictions = sess.run([predictions_op])
                 true_count += np.sum(predictions)
                 step += 1
-
+            end = time.time()
+            duration = end - start
+            examples_per_sec = num_iter * FLAGS.batch_size / duration
             # Compute precision @ 1.
             precision = true_count / total_sample_count
-            print('%s: %s accuracy = %.3f'
-                  % (datetime.now(), FLAGS.eval_data, precision))
+            print('%s: %.1f inferences/sec, %s accuracy = %.3f'
+                  % (datetime.now(), examples_per_sec, FLAGS.eval_data, precision))
 
             summary = tf.Summary()
             summary.ParseFromString(sess.run(summary_op))
