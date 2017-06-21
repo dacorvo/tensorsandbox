@@ -63,9 +63,16 @@ def train_ops():
     # Instantiate the model
     model = select.by_name(FLAGS.model)
 
+    # Create a 'virtual' graph node based on images that represents the input
+    # node to be used for graph retrieval
+    inputs = tf.identity(images, 'inputs')
+
     # Build a Graph that computes the logits predictions from the
     # inference model
-    logits = model.inference(images)
+    logits = model.inference(inputs)
+
+    # In the same way, create a 'virtual' node for outputs
+    outputs = tf.identity(logits, 'predictions')
 
     # Calculate loss
     loss = model.loss(logits, labels)
