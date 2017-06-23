@@ -22,10 +22,14 @@ IMAGE_DEPTH = 3
 # As a rule of thumb, use twice as many input threads as the number of CPU
 NUM_THREADS = multiprocessing.cpu_count() * 2
 
+FLAGS = tf.app.flags.FLAGS
+
 tf.app.flags.DEFINE_string('data_dir', './data',
                            """Directory containing data sets """)
 tf.app.flags.DEFINE_boolean('data_aug', False,
                              """Whether to perform data augmentation or not""")
+tf.app.flags.DEFINE_integer('batch_size', 128,
+                                """Size of each batch.""")
 
 DATA_URL = 'http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz'
 
@@ -157,12 +161,16 @@ def eval_inputs(test_data, data_dir, batch_size):
 
     return images, tf.reshape(labels, [batch_size])
 
-def train_inputs(data_dir, batch_size):
+def train_inputs(data_dir):
     """Construct input for CIFAR training.
+
+    Note that batch_size is a placeholder whose default value is the one
+    specified during training. It can however be specified differently at
+    inference time by passing it explicitly in the feed dict when sess.run is
+    called.
 
     Args:
         data_dir: Path to the CIFAR-10 data directory.
-        batch_size: Number of images per batch.
 
     Returns:
         images: Images. 4D tensor [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3].
@@ -182,14 +190,16 @@ def train_inputs(data_dir, batch_size):
     float_image = tf.image.per_image_standardization(image)
 
     # Create a queue to extract batch of samples
+    batch_size_tensor = tf.placeholder_with_default(FLAGS.batch_size, shape=[])
     images, labels = tf.train.shuffle_batch([float_image,label],
-                                     batch_size = batch_size,
+                                     batch_size = batch_size_tensor,
                                      num_threads = NUM_THREADS,
-                                     capacity = 20000 + 3 * batch_size,
+                                     capacity = 20000 + 3 * FLAGS.batch_size,
                                      min_after_dequeue = 20000)
 
     # Display the training images in the visualizer
     tf.summary.image('images', images)
 
-    return images, tf.reshape(labels, [batch_size])
+    return images, tf.reshape(labels, [-1])
+
 

@@ -6,6 +6,3 @@ import tensorflow as tf
 
 tf.app.flags.DEFINE_string('log_dir', './log/cifar10',
                                """Directory where to write event logs.""")
-tf.app.flags.DEFINE_integer('batch_size', 128,
-                                """Size of each batch.""")
-

@@ -58,8 +58,7 @@ def train_ops():
     global_step = tf.Variable(0, name='global_step', trainable=False)
 
     # Instantiate async producers for images and labels
-    images, labels = data.train_inputs(data_dir=data_dir,
-                                        batch_size=batch_size)
+    images, labels = data.train_inputs(data_dir=data_dir)
 
     # Instantiate the model
     model = select.by_name(FLAGS.model)
@@ -168,3 +167,4 @@ def main(argv=None):
 
 if __name__ == '__main__':
     tf.app.run()
+

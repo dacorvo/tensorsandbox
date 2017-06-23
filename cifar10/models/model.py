@@ -99,14 +99,18 @@ class Model(object):
         return outputs
 
     def fc_layer(self, inputs, neurons, decay, name, relu=True):
-        if len(inputs.get_shape().as_list()) > 2:
-            # We need to reshape inputs
-            N = inputs.get_shape().as_list()[0]
-            reshaped = tf.reshape(inputs, shape=[N, -1])
-        else:
-            reshaped = inputs
-        dim = reshaped.get_shape()[1].value
         with tf.variable_scope(name) as scope:
+            if len(inputs.get_shape().as_list()) > 2:
+                # We need to reshape inputs:
+                #   [ batch size , w, h, c ] -> [ batch size, w x h x c ]
+                # Batch size is a dynamic value, but w, h and c are static and
+                # can be used to specifiy the reshape operation
+                dim = np.prod(inputs.get_shape().as_list()[1:])
+                reshaped = tf.reshape(inputs, shape=[-1, dim], name='reshaped')
+            else:
+                # No need to reshape inputs
+                reshaped = inputs
+            dim = reshaped.get_shape().as_list()[1]
             weights = self._get_weights_var('weights',
                                             shape=[dim,neurons],
                                             decay=decay)
