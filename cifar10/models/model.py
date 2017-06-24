@@ -161,9 +161,9 @@ class Model(object):
         return outputs
 
     def avg_layer(self, inputs, name):
-        N = inputs.get_shape().as_list()[0]
         w = inputs.get_shape().as_list()[1]
         h = inputs.get_shape().as_list()[2]
+        c = inputs.get_shape().as_list()[3]
         with tf.variable_scope(name) as scope:
             # Use current spatial dimensions as Kernel size to produce a scalar
             avg = tf.nn.avg_pool(inputs,
@@ -171,8 +171,8 @@ class Model(object):
                                  strides=[1,1,1,1],
                                  padding='VALID',
                                  name=scope.name)
-        # Reshape output to remove spatial dimensions
-        return tf.reshape(avg, shape=[N,-1])
+        # Reshape output to remove spatial dimensions reduced to one
+        return tf.reshape(avg, shape=[-1,c])
 
     def inference(self, images):
         raise NotImplementedError('Model subclasses must implement this method')
