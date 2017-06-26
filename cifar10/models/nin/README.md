@@ -80,9 +80,10 @@ global average pool
 
 Results:
 
-@10,000:  74,2%
-@50,000:  87,2%
-@100,000: 88,9%
+@10,000  : 74,2%
+@50,000  : 87,2%
+@100,000 : 88,9%
+@300,000 : 89,8%
 
 Accuracy greatly improved, but processing cost explodes.
 

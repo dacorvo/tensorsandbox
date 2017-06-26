@@ -28,17 +28,20 @@ With data augmentation, the accuracy after 10,000 iterations reached 78,8%.
 Finally, I used trainable variables moving averages instead of raw values, and
 it gave me the extra missing accuracy to match the tutorial performance: 81,4%.
 
+After 300,000 iterations, the model with data augmentation even reached 87%
+accuracy.
+
 Tutorial model metrics:
 
 Without data augmentation (32x32x3 images):
 
-Size : 1.76 Millions of parameters
-Flops: 66.98 Millions of operations
+Size  : 1.76 Millions of parameters
+Flops : 66.98 Millions of operations
 
 With data augmentation (24x24x3 images):
 
-Size : 1.07 Millions of parameters
-Flops: 37.75 Millions of operations
+Size     : 1.07 Millions of parameters
+Flops    : 37.75 Millions of operations
 
 ## Performance experiments
 
@@ -57,6 +60,54 @@ compared to the tutorial version.
 
 ![cifar10 accuracy for various models after 300,000 iterations](./cifar10@300000.jpg)
 
-Also, examine how these models can be compressed using:
+For each model, I evaluated the model size in number of parameters, and its
+computational cost in number of operations.
+
+To put these theoretical counters in perspective, I also got 'real' numbers by
+checking:
+- the actual disk size of the saved models,
+- the inference time using the C++ label_image tool (I added some traces)
+
+The ratio between the number of parameters and the actual size on disk seems
+consistent for all models, but the inference time is not, and may vary greatly
+depending on the actual local optimizations. The winner is however the model
+with the less number of operations.
+
+Here are the detailed numbers for all trained models :
+
+### Tuto
+
+Accuracy : 87,2%
+Size     : 1.07 Millions of parameters  / 4,278,750 bytes
+Flops    : 37.75 Millions of operations / 44 ms
+
+### Alex (alex4)
+
+Accuracy : 87,5%
+Size     : 1.49 Millions of parameters  / 5,979,938 bytes
+Flops    : 35.20 Millions of operations / 50 ms
+
+### NiN (nin2)
+
+Accuracy : 89,8%
+Size     : 0.97 Millions of parameters   / 3,881,548 bytes
+Flops    : 251.36 Millions of operations / 90 ms
+
+### SqueezeNet (squeeze1)
+
+Accuracy : 87,8%
+Size     : 0.15 Millions of parameters   / 602,892 bytes
+Flops    : 22.84 Millions of operations  / 27 ms
+
+## Conclusion
+
+From all model topologies I studied here, the SqueezeNet architecture is by far
+the most efficient, reaching the same level of accuracy with a model that is
+more than six times lighter than the tutorial version, and more than 1,5x
+faster.
+
+## Further experiments
+
+Examine how these models can be compressed using:
 - iterative pruning,
 - quantization.

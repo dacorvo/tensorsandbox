@@ -60,8 +60,8 @@ Results:
 @10,000:  85,3%
 @100,000: 86,1%
 
-Huge decrease in processing time despite equivalent computation cost.
-This may be relatd to the lrn implementation (or my bogus calculations).
+Huge decrease in training time despite equivalent computation cost.
+This may be related to the lrn implementation (or my bogus calculations).
 
 Size : 1.07 Millions of parameters
 Flops: 37.08 Millions of operations
@@ -93,8 +93,10 @@ Results:
 @10,000:  81,2%
 @50,000:  86,0%
 @100,000: 86,4%
+@300,000: 87,5%
 
-Again, we see a lower processing time for an equivalent processing cost.
+Again, we see a lower training time for an equivalent processing cost, which
+is odd. Also, inference time seems a bit higher.
 
 Size : 1.49 Millions of parameters
 Flops: 35.20 Millions of operations

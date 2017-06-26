@@ -44,9 +44,10 @@ average pool
 
 Results:
 
-@10,000:  66,0%
-@50,000:  83,6%
-@100,000: 85,7%
+@10,000  : 66,0%
+@50,000  : 83,6%
+@100,000 : 85,7%
+@300,000 : 87,8%
 
 Following a hint in the paper, we reduce the squeeze ratio of the first layer.
 Accuracy is improved a bit, but processing time rises.
