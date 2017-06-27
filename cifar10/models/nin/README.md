@@ -1,7 +1,7 @@
 # NIN-like variants of the Tensorflow CIFAR10 tutorial
 
 In this directory, we test several models inspired by the [Network in
-Network](https://arxiv.org/abs/1312.4400)paper.
+Network](https://arxiv.org/abs/1312.4400) paper.
 
 These models differ from the traditional Alex style CNN, using inner layers
 combining regular convolutions with 1x1 convolutions.

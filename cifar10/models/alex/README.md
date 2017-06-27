@@ -122,3 +122,12 @@ is odd. Also, inference time seems a bit higher.
 Size : 1.49 Millions of parameters
 Flops: 35.20 Millions of operations
 ~~~~
+
+# Conclusion
+
+From the results above, we see that:
+
+- Local-response-normalization is useless,
+- One of the FC layer can be removed without harming accuracy,
+- For the same amount of parameters, more filters with smaller kernels are
+equivalent.
