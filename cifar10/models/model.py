@@ -16,6 +16,7 @@ class Model(object):
         self.dropout = dropout
         self.sizes = []
         self.flops = []
+        self.training = tf.placeholder_with_default(False, shape=[], name="training")
 
     def _get_weights_var(self, name, shape, decay=False):
         """Helper to create an initialized Variable with weight decay.
@@ -55,7 +56,7 @@ class Model(object):
 
         return var
 
-    def conv_layer(self, inputs, size, filters, stride, decay, name):
+    def conv_layer(self, inputs, size, filters, stride, decay, name, bn=False):
         channels = inputs.get_shape()[3]
         shape = [size, size, channels, filters]
         with tf.variable_scope(name + '/conv') as scope:
@@ -71,6 +72,9 @@ class Model(object):
                                 weights,
                                 strides=[1,stride,stride,1],
                                 padding='SAME')
+            if bn:
+                conv = tf.layers.batch_normalization(conv,
+                                                     training=self.training)
             pre_activation = tf.nn.bias_add(conv, biases)
 
             outputs= tf.nn.relu(pre_activation, name=scope.name)
@@ -98,7 +102,7 @@ class Model(object):
 
         return outputs
 
-    def fc_layer(self, inputs, neurons, decay, name, relu=True):
+    def fc_layer(self, inputs, neurons, decay, name, relu=True, bn=False):
         with tf.variable_scope(name) as scope:
             if len(inputs.get_shape().as_list()) > 2:
                 # We need to reshape inputs:
@@ -118,12 +122,13 @@ class Model(object):
                                     shape=[neurons],
                                     dtype=tf.float32,
                                     initializer=tf.constant_initializer(0.0))
+            x = tf.add(tf.matmul(reshaped, weights), biases)
+            if bn:
+                x = tf.layers.batch_normalization(x, training=self.training)
             if relu:
-                outputs = tf.nn.relu(tf.matmul(reshaped, weights) + biases,
-                                     name=scope.name)
+                outputs = tf.nn.relu(x)
             else:
-                outputs = tf.add(tf.matmul(reshaped, weights), biases,
-                                 name=scope.name)
+                outputs = x
 
         # Evaluate layer size
         self.sizes.append((name, (dim + 1) * neurons))

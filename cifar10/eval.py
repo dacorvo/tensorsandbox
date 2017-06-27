@@ -89,17 +89,20 @@ def evaluate(saver, checkpoint_dir, summary_writer, predictions_op, summary_op):
             step = 0
             start = time.time()
             while step < num_iter and not coord.should_stop():
+                feed_dict = {'training:0': False}
                 if FLAGS.profiling and step == (num_iter -1):
                     run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
                     run_metadata = tf.RunMetadata()
                     predictions = sess.run([predictions_op],
+                                           feed_dict=feed_dict,
                                            options=run_options,
                                            run_metadata=run_metadata)
                     summary_writer.add_run_metadata(run_metadata,
                                                     'step %d' %
                                                     int(global_step))
                 else:
-                    predictions = sess.run([predictions_op])
+                    predictions = sess.run([predictions_op],
+                                           feed_dict=feed_dict)
                 true_count += np.sum(predictions)
                 step += 1
             end = time.time()

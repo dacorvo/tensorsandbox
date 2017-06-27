@@ -98,8 +98,11 @@ def train_ops():
         tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_step)
     variables_averages_op = variable_averages.apply(tf.trainable_variables())
 
+    # For batch normalization, we also need to update some variables
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
     # Create a meta-graph that includes sgd and variables moving average
-    with tf.control_dependencies([sgd_op, variables_averages_op]):
+    with tf.control_dependencies([sgd_op, variables_averages_op] + update_ops):
         train_op = tf.no_op(name='train')
 
     # Build another graph to provide training summary information
@@ -166,7 +169,7 @@ def train_loop(cluster=None, master=None, task_index=0):
                tf.train.NanTensorHook(loss),
                _LoggerHook()]) as mon_sess:
         while not mon_sess.should_stop():
-            mon_sess.run(train_op)
+            mon_sess.run(train_op, feed_dict={'training:0': True})
 
 def main(argv=None):
     data.maybe_download_and_extract(FLAGS.data_dir)
