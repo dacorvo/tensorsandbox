@@ -94,6 +94,39 @@ Finally, create python package and install it:
 # pip install -I /tmp/tensorflow_pkg/*.whl
 ~~~~
 
+## Examples of container invocations
+
+Although it is generally a good practice to use one container per command, I prefer starting an interactive shell session in a container and type my commands in the container prompt.
+
+All my containers usually share the same data volume that is mapped to my project directory.
+
+Due to synchronization issues encountered with clusters, I typically store logs and checkpoints under the project directory.
+
+Below is an example of the commands I use to start a container running Tensorboard and a standalone training session on a CPU:
+
+~~~~
+$ docker run -it \
+             -v ~/path-to-project/:/path-to-project \
+             -p 0.0.0.0:6006:6006 \
+             tensorflow/tensorflow /bin/bash
+...
+# tensorboard --logdir=/path-to-project/log &
+# cd /path-to-project
+# <training command invocation>
+~~~~
+
+Similarly, here are the commands I would launch to create a GPU worker container to add to a cluster:
+
+~~~~
+$ nvidia-docker run -it \
+                    -v ~/path-to-project/:/path-to-project \
+                    -p 0.0.0.0:2222:2222  \
+                    tensorflow/tensorflow:latest-gpu /bin/bash
+...
+# cd /path-to-project
+# <worker training command invocation>
+~~~~
+
 ## Typical setup
 
 On a master host, I usually create three containers: CPU #1, CPU #2, GPU.
@@ -101,7 +134,7 @@ On a master host, I usually create three containers: CPU #1, CPU #2, GPU.
 My CPU containers are typicall built from the development version to take
 advantage of the CPU optimizations.
 
-All containers share the same data volume that is mapped to my development
+As explained in the previous paragraph, all my containers share the same data volume that is mapped to my project
 directory.
 
 CPU #1 runs tensorboard and acts as a parameter server if I create a cluster.
@@ -110,7 +143,7 @@ Depending on the CPU/GPU setup (ie which is the most performant), CPU #2 and
 GPU are either used for models evaluation or main worker.
 
 Note: I could only make this work if the checkpoints are saved on the shared
-data volume, because the parameter server and main worker seems to contribute
+data volume mapped to my project , because the parameter server and main worker seems to contribute
 both to the model serialization.
 
 On a slave host, I usually create two containers: CPU, GPU.
