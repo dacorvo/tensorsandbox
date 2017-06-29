@@ -44,7 +44,7 @@ tf.app.flags.DEFINE_integer('run', 0,
                                 """Run from which we want to freeze the model.""")
 
 def get_checkpoint_dir(log_dir, model_name, run):
-    return os.path.join(log_dir, model_name, '%d' % run, 'train')
+    return os.path.join(log_dir, model_name, '%d' % run, 'eval', 'test')
 
 def main(argv=None):
     # Deduce checkpoint dir from log directory, model and run

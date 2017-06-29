@@ -46,7 +46,8 @@ def get_run_dir(log_dir, model_name):
         run = 0
     return os.path.join(model_dir, '%d' % run)
 
-def evaluate(saver, checkpoint_dir, summary_writer, predictions_op, summary_op):
+def evaluate(saver, checkpoint_dir, summary_writer, predictions_op,
+             summary_op, eval_dir):
     """Run an evaluation on FLAGS.num_examples
 
     Args:
@@ -61,6 +62,9 @@ def evaluate(saver, checkpoint_dir, summary_writer, predictions_op, summary_op):
     """
     with tf.Session() as sess:
 
+        # Save the graph
+        tf.train.write_graph(sess.graph_def, eval_dir, 'graph.pbtxt')
+        
         # Try to restore the model parameters from a checkpoint
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
@@ -123,6 +127,7 @@ def evaluate(saver, checkpoint_dir, summary_writer, predictions_op, summary_op):
 
         coord.request_stop()
         coord.join(threads, stop_grace_period_secs=10)
+        saver.save(sess, os.path.join(eval_dir, "model.ckpt-%s" % global_step))
         return global_step
 
 def evaluation_loop():
@@ -167,14 +172,15 @@ def evaluation_loop():
 
         # We need a checkpoint dir to restore model parameters
         checkpoint_dir = os.path.join(run_dir, 'train')
-
+        
         last_step = 0
         while True:
             global_step = evaluate(saver,
                                    checkpoint_dir,
                                    summary_writer,
                                    predictions_op,
-                                   summary_op)
+                                   summary_op,
+                                   eval_dir)
             if FLAGS.run_once or last_step == global_step:
                 break
             last_step = global_step
